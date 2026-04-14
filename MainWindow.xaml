@@ -380,6 +380,25 @@
                     <TextBlock Text="Results Panel" Style="{StaticResource SectionHeaderStyle}"/>
 
                     <UniformGrid Columns="2">
+                        <StackPanel>
+
+                            <TextBlock Text="Suggested Budget" Style="{StaticResource ResultLabelStyle}"/>
+                            <TextBlock x:Name="SuggestedBudgetValueText" Text="-" Style="{StaticResource ResultValueStyle}"/>
+
+                            <TextBlock Text="Actual Budget" Style="{StaticResource ResultLabelStyle}"/>
+                            <TextBlock x:Name="ActualBudgetValueText" Text="-" Style="{StaticResource ResultValueStyle}"/>
+
+                            <TextBlock Text="FI Age" Style="{StaticResource ResultLabelStyle}"/>
+                            <TextBlock x:Name="FIAgeValueText" Text="-" Style="{StaticResource ResultValueStyle}"/>
+
+                            <TextBlock Text="FI Asset" Style="{StaticResource ResultLabelStyle}"/>
+                            <TextBlock x:Name="FIAssetValueText" Text="-" Style="{StaticResource ResultValueStyle}"/>
+
+                            <TextBlock Text="Millionaire Age" Style="{StaticResource ResultLabelStyle}"/>
+                            <TextBlock x:Name="MillionaireAgeValueText" Text="-" Style="{StaticResource ResultValueStyle}"/>
+
+                        </StackPanel>
+                        <!--
                         <StackPanel Margin="0,0,8,0">
                             <TextBlock Text="Suggested Budget" Style="{StaticResource ResultLabelStyle}"/>
                             <TextBlock x:Name="SuggestedBudgetValueText" Text="-" Style="{StaticResource ResultValueStyle}"/>
@@ -396,7 +415,7 @@
                             <TextBlock Text="FI Age" Style="{StaticResource ResultLabelStyle}"/>
                             <TextBlock x:Name="FiAgeValueText" Text="-" Style="{StaticResource SmallResultValueStyle}"/>
                         </StackPanel>
-
+						
                         <StackPanel Margin="8,0,0,0">
                             <TextBlock Text="Actual Budget" Style="{StaticResource ResultLabelStyle}"/>
                             <TextBlock x:Name="ActualBudgetValueText" Text="-" Style="{StaticResource ResultValueStyle}"/>
@@ -413,6 +432,7 @@
                             <TextBlock Text="Millionaire Age" Style="{StaticResource ResultLabelStyle}"/>
                             <TextBlock x:Name="MillionaireAgeValueText" Text="-" Style="{StaticResource SmallResultValueStyle}"/>
                         </StackPanel>
+						-->
                     </UniformGrid>
 
                     <TextBlock Text="Flags" Style="{StaticResource ResultLabelStyle}" Margin="0,4,0,1"/>

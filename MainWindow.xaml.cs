@@ -34,6 +34,14 @@ namespace ProductMasterPlanV1.Wpf
             SeedDefaults();
             RefreshAllDisplays();
             SetStatus("Ready.");
+
+            Loaded += MainWindow_Loaded; //TheEngineer
+        }
+
+        /*TheEngineer*/
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            RunSimulationButton_Click(null, null);
         }
 
         private void SeedDefaults()
@@ -126,6 +134,46 @@ namespace ProductMasterPlanV1.Wpf
 
         private async Task RunSimulationAsync()
         {
+
+            if (_isBusy) return;
+
+            var errors = ValidateInputs();
+            ShowValidationErrors(errors);
+
+            if (errors.Count > 0)
+            {
+                SetStatus("Please fix validation errors.");
+                return;
+            }
+
+            try
+            {
+                _isBusy = true;
+                SetStatus("Running simulation...");
+
+                var request = BuildRunRequest();
+                var projection = await _v1ApplicationService.RunSimulationAsync(request);
+
+                if (projection == null)
+                {
+                    SetStatus("Simulation returned no result.");
+                    return;
+                }
+
+                _currentProjection = projection;
+                RefreshProjectionDisplay();
+                SetStatus("Simulation complete.");
+            }
+            catch (Exception ex)
+            {
+                SetStatus(ex.Message);
+            }
+            finally
+            {
+                _isBusy = false;
+            }
+
+            /**
             if (_isBusy) return;
 
             var errors = ValidateInputs();
@@ -156,6 +204,7 @@ namespace ProductMasterPlanV1.Wpf
             {
                 _isBusy = false;
             }
+			**/
         }
 
         private async Task SaveAsync()
@@ -238,6 +287,38 @@ namespace ProductMasterPlanV1.Wpf
 
         private void RefreshProjectionDisplay()
         {
+            if (_currentProjection == null)
+            {
+                ActualBudgetValueText.Text = _budget.HasValue ? FormatMoney(_budget.Value) : ActualBudgetValueText.Text;
+                return;
+            }
+            if (_currentProjection?.FiAge != null)
+            {
+                FIAgeValueText.Text = _currentProjection.FiAge.ToString();
+            }
+
+            if (_currentProjection?.FiAsset is decimal fiAsset)
+            {
+                FIAssetValueText.Text = FormatMoney(fiAsset);
+            }
+
+            SuggestedBudgetValueText.Text = FormatMoney(_currentProjection.SuggestedBudget);
+            ActualBudgetValueText.Text = FormatMoney(_currentProjection.ActualBudget);
+            //FIAgeValueText.Text = _currentProjection.FiAge.ToString();
+            //FIAssetValueText.Text = _currentProjection.FiAsset is decimal fiAsset ? FormatMoney(fiAsset) : "-";
+            MillionaireAgeValueText.Text = _currentProjection.MillionaireAge.ToString();
+
+            /*
+			SuggestedBudgetValueText.Text = _currentProjection != null ? FormatMoney(_currentProjection.SuggestedBudget) : "-";
+            ActualBudgetValueText.Text = _currentProjection != null ? FormatMoney(_currentProjection.ActualBudget) : "-";
+            FIAgeValueText.Text = _currentProjection != null ? _currentProjection.FiAge.ToString() : "-";
+            FIAssetValueText.Text = _currentProjection?.FiAsset.HasValue == true
+                ? FormatMoney(_currentProjection.FiAsset.Value)
+                : "-";
+            MillionaireAgeValueText.Text = _currentProjection != null ? _currentProjection.MillionaireAge.ToString() : "-";
+			*/
+
+            /*
             SuggestedBudgetValueText.Text = _currentProjection != null ? FormatMoney(_currentProjection.SuggestedBudget) : "-";
             ActualBudgetValueText.Text = _currentProjection != null ? FormatMoney(_currentProjection.ActualBudget) : (_budget.HasValue ? FormatMoney(_budget.Value) : "-");
             SavingsValueText.Text = _currentProjection != null ? FormatMoney(_currentProjection.Savings) : "-";
@@ -253,6 +334,7 @@ namespace ProductMasterPlanV1.Wpf
             FlagsValueText.Text = _currentProjection == null
                 ? "-"
                 : $"Debt Free Reachable: {_currentProjection.IsDebtFreeReachable}\nFI Reachable: {_currentProjection.IsFiReachable}\nMillionaire Reachable: {_currentProjection.IsMillionaireReachable}";
+			*/
         }
 
         private void RefreshStatsDisplay()
@@ -280,6 +362,11 @@ namespace ProductMasterPlanV1.Wpf
         private void AdjustBudget(decimal delta)
         {
             var current = _budget ?? (_currentProjection != null ? _currentProjection.SuggestedBudget : 0m);
+            /**
+            _budget = current + delta;
+            RefreshAllDisplays();
+			**/
+
             _budget = current + delta;
             RefreshAllDisplays();
         }
