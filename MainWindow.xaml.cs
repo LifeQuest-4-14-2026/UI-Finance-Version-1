@@ -18,7 +18,6 @@ namespace ProductMasterPlanV1.Wpf
 {
     public partial class MainWindow : Window
     {
-        string letChangeTheWorld = string.Empty;
         private readonly IV1ApplicationService _v1ApplicationService;
 
         private V1ProjectionResponse? _currentProjection;
@@ -395,6 +394,17 @@ namespace ProductMasterPlanV1.Wpf
             AnimateResultPulse(FIAgeValueText);
             AnimateResultPulse(FIAssetValueText);
             AnimateResultPulse(MillionaireAgeValueText);
+
+            SetStatus($"BudgetTooLow: {_currentProjection?.IsBudgetTooLow}"); //TheEngineer
+            System.Diagnostics.Debug.WriteLine($"BudgetTooLow: {_currentProjection?.IsBudgetTooLow}"); //TheEngineer
+            if (_currentProjection?.IsBudgetTooLow == true)
+            {
+                SetStatus("⚠️ Warning: This budget may be too low to sustain.");
+
+                // subtle Candy Crush feedback
+                AnimateResultPulse(ActualBudgetValueText);
+                ActualBudgetValueText.Foreground = new SolidColorBrush(Colors.Goldenrod);
+            }
         }
 
         private void RefreshStatsDisplay()
