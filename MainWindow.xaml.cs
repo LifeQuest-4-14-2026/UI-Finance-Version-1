@@ -7,6 +7,10 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Linq;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
 
@@ -25,23 +29,24 @@ namespace ProductMasterPlanV1.Wpf
         private decimal _startingAssets;
         private decimal _startingDebt;
         private decimal? _budget;
-        private System.Windows.Threading.DispatcherTimer _debounceTimer;
+        //private System.Windows.Threading.DispatcherTimer _debounceTimer;
+        private readonly DispatcherTimer _budgetResultsDebounceTimer;
+        private bool _isBudgetPreviewActive;
+        private static readonly string PendingDisplayText = "•••";
 
         private bool _isBusy;
 
         public MainWindow(IV1ApplicationService v1ApplicationService)
         {
+
             InitializeComponent();
-
-            _debounceTimer = new DispatcherTimer();
-            _debounceTimer.Interval = TimeSpan.FromMilliseconds(300);
-            _debounceTimer.Tick += (s, e) =>
-            {
-                _debounceTimer.Stop();
-                RunSimulationButton_Click(null, null);
-            };
-
             _v1ApplicationService = v1ApplicationService ?? throw new ArgumentNullException(nameof(v1ApplicationService));
+
+            _budgetResultsDebounceTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(350)
+            };
+            _budgetResultsDebounceTimer.Tick += BudgetResultsDebounceTimer_Tick;
 
             SeedDefaults();
             RefreshAllDisplays();
@@ -54,6 +59,43 @@ namespace ProductMasterPlanV1.Wpf
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             RunSimulationButton_Click(null, null);
+        }
+
+        private async void BudgetResultsDebounceTimer_Tick(object? sender, EventArgs e)
+        {
+            _budgetResultsDebounceTimer.Stop();
+
+            if (_isBusy)
+                return;
+
+            var errors = ValidateInputs();
+            ShowValidationErrors(errors);
+
+            if (errors.Count > 0)
+            {
+                SetStatus("Please fix validation errors.");
+                return;
+            }
+
+            try
+            {
+                _isBusy = true;
+                SetStatus("Calculating...");
+
+                var request = BuildRunRequest();
+                _currentProjection = await _v1ApplicationService.RunSimulationAsync(request);
+
+                RefreshProjectionDisplay();
+                SetStatus("Updated.");
+            }
+            catch (Exception ex)
+            {
+                SetStatus(ex.Message);
+            }
+            finally
+            {
+                _isBusy = false;
+            }
         }
 
         private void SeedDefaults()
@@ -320,33 +362,11 @@ namespace ProductMasterPlanV1.Wpf
             //FIAssetValueText.Text = _currentProjection.FiAsset is decimal fiAsset ? FormatMoney(fiAsset) : "-";
             MillionaireAgeValueText.Text = _currentProjection.MillionaireAge.ToString();
 
-            /*
-			SuggestedBudgetValueText.Text = _currentProjection != null ? FormatMoney(_currentProjection.SuggestedBudget) : "-";
-            ActualBudgetValueText.Text = _currentProjection != null ? FormatMoney(_currentProjection.ActualBudget) : "-";
-            FIAgeValueText.Text = _currentProjection != null ? _currentProjection.FiAge.ToString() : "-";
-            FIAssetValueText.Text = _currentProjection?.FiAsset.HasValue == true
-                ? FormatMoney(_currentProjection.FiAsset.Value)
-                : "-";
-            MillionaireAgeValueText.Text = _currentProjection != null ? _currentProjection.MillionaireAge.ToString() : "-";
-			*/
-
-            /*
-            SuggestedBudgetValueText.Text = _currentProjection != null ? FormatMoney(_currentProjection.SuggestedBudget) : "-";
-            ActualBudgetValueText.Text = _currentProjection != null ? FormatMoney(_currentProjection.ActualBudget) : (_budget.HasValue ? FormatMoney(_budget.Value) : "-");
-            SavingsValueText.Text = _currentProjection != null ? FormatMoney(_currentProjection.Savings) : "-";
-            NettedAssetsValueText.Text = _currentProjection != null ? FormatMoney(_currentProjection.NettedAssets) : "-";
-            NettedDebtValueText.Text = _currentProjection != null ? FormatMoney(_currentProjection.NettedDebt) : "-";
-            FiTargetAssetsValueText.Text = _currentProjection != null ? FormatMoney(_currentProjection.FiTargetAssets) : "-";
-            DebtFreeAgeValueText.Text = _currentProjection != null ? _currentProjection.DebtFreeAge.ToString() : "-";
-            FiAgeValueText.Text = _currentProjection != null ? _currentProjection.FiAge.ToString() : "-";
-            FiAssetValueText.Text = _currentProjection?.FiAsset is decimal fiAsset
-                ? FormatMoney(fiAsset)
-                : "-";
-            MillionaireAgeValueText.Text = _currentProjection != null ? _currentProjection.MillionaireAge.ToString() : "-";
-            FlagsValueText.Text = _currentProjection == null
-                ? "-"
-                : $"Debt Free Reachable: {_currentProjection.IsDebtFreeReachable}\nFI Reachable: {_currentProjection.IsFiReachable}\nMillionaire Reachable: {_currentProjection.IsMillionaireReachable}";
-			*/
+            AnimateResultPulse(SuggestedBudgetValueText);
+            AnimateResultPulse(ActualBudgetValueText);
+            AnimateResultPulse(FIAgeValueText);
+            AnimateResultPulse(FIAssetValueText);
+            AnimateResultPulse(MillionaireAgeValueText);
         }
 
         private void RefreshStatsDisplay()
@@ -374,16 +394,15 @@ namespace ProductMasterPlanV1.Wpf
         private void AdjustBudget(decimal delta)
         {
             var current = _budget ?? (_currentProjection != null ? _currentProjection.SuggestedBudget : 0m);
-            /**
-            _budget = current + delta;
-            RefreshAllDisplays();
-			**/
 
             _budget = current + delta;
+
+            // Immediate UI update (Budget card updates instantly)
             RefreshAllDisplays();
 
-            _debounceTimer.Stop();
-            _debounceTimer.Start();
+            // Debounce simulation (Candy Crush "last click" behavior)
+            _budgetResultsDebounceTimer.Stop();
+            _budgetResultsDebounceTimer.Start();
         }
 
         private bool TryApplyVoiceCommand(string rawText, out string error)
@@ -476,6 +495,69 @@ namespace ProductMasterPlanV1.Wpf
             else
                 SetStatus(error);
         }
+
+
+        private void AnimateResultPulse(System.Windows.Controls.TextBlock target)
+        {
+            if (target == null)
+                return;
+
+            if (target.RenderTransform is not System.Windows.Media.ScaleTransform scaleTransform)
+            {
+                scaleTransform = new System.Windows.Media.ScaleTransform(1.0, 1.0);
+                target.RenderTransform = scaleTransform;
+            }
+
+            target.RenderTransformOrigin = new Point(0.5, 0.5);
+
+            var storyboard = new System.Windows.Media.Animation.Storyboard();
+
+            var scaleXAnimation = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
+            scaleXAnimation.KeyFrames.Add(
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+            scaleXAnimation.KeyFrames.Add(
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.18, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(90))));
+            scaleXAnimation.KeyFrames.Add(
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(0.95, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(170))));
+            scaleXAnimation.KeyFrames.Add(
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(240))));
+            System.Windows.Media.Animation.Storyboard.SetTarget(scaleXAnimation, target);
+            System.Windows.Media.Animation.Storyboard.SetTargetProperty(
+                scaleXAnimation,
+                new PropertyPath("RenderTransform.ScaleX"));
+
+            var scaleYAnimation = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
+            scaleYAnimation.KeyFrames.Add(
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+            scaleYAnimation.KeyFrames.Add(
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.18, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(90))));
+            scaleYAnimation.KeyFrames.Add(
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(0.95, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(170))));
+            scaleYAnimation.KeyFrames.Add(
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(240))));
+            System.Windows.Media.Animation.Storyboard.SetTarget(scaleYAnimation, target);
+            System.Windows.Media.Animation.Storyboard.SetTargetProperty(
+                scaleYAnimation,
+                new PropertyPath("RenderTransform.ScaleY"));
+
+            var opacityAnimation = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
+            opacityAnimation.KeyFrames.Add(
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+            opacityAnimation.KeyFrames.Add(
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(0.70, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(80))));
+            opacityAnimation.KeyFrames.Add(
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(240))));
+            System.Windows.Media.Animation.Storyboard.SetTarget(opacityAnimation, target);
+            System.Windows.Media.Animation.Storyboard.SetTargetProperty(
+                opacityAnimation,
+                new PropertyPath("Opacity"));
+
+            storyboard.Children.Add(scaleXAnimation);
+            storyboard.Children.Add(scaleYAnimation);
+            storyboard.Children.Add(opacityAnimation);
+            storyboard.Begin();
+        }
+
 
         private void AgeMinus6_Click(object sender, RoutedEventArgs e) => AdjustAge(-6);
         private void AgeMinus3_Click(object sender, RoutedEventArgs e) => AdjustAge(-3);
