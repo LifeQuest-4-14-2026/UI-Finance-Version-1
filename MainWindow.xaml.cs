@@ -18,6 +18,7 @@ namespace ProductMasterPlanV1.Wpf
 {
     public partial class MainWindow : Window
     {
+        /*LET'S CHANGE THE WORLD*/
         private readonly IV1ApplicationService _v1ApplicationService;
 
         private V1ProjectionResponse? _currentProjection;
@@ -346,6 +347,8 @@ namespace ProductMasterPlanV1.Wpf
                 ActualBudgetValueText.Text = _budget.HasValue ? FormatMoney(_budget.Value) : ActualBudgetValueText.Text;
                 return;
             }
+
+            /* //TheEngineer
             if (_currentProjection?.FiAge != null)
             {
                 //FIAgeValueText.Text = _currentProjection.FiAge.ToString(); //TheEngineer
@@ -355,10 +358,30 @@ namespace ProductMasterPlanV1.Wpf
                     ? _currentProjection.FiAge.Value.ToString()
                     : (_currentProjection.IsFiReachable ? "-" : "FI IS NOT POSSIBLE");
             }
+			*/
 
-            if (_currentProjection?.FiAsset is decimal fiAsset)
+            if (_currentProjection == null)
             {
-                FIAssetValueText.Text = FormatMoney(fiAsset);
+                FIAgeValueText.Text = "-";
+            }
+            else if (_currentProjection.FiAge.HasValue)
+            {
+                FIAgeValueText.Text = _currentProjection.FiAge.Value.ToString();
+            }
+            else if (!_currentProjection.IsFiReachable)
+            {
+                // 🎮 Candy Crush moment
+                FIAgeValueText.Text = "Congrats! You’ve unlocked: Work Forever Mode 🎉";
+
+                // subtle visual feedback (reuse your existing animation)
+                AnimateResultPulse(FIAgeValueText);
+
+                // color shift to make it pop (no XAML change needed)
+                FIAgeValueText.Foreground = new SolidColorBrush(Colors.OrangeRed);
+            }
+            else
+            {
+                FIAgeValueText.Text = "-";
             }
 
             SuggestedBudgetValueText.Text = FormatMoney(_currentProjection.SuggestedBudget);
