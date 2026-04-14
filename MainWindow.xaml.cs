@@ -348,7 +348,12 @@ namespace ProductMasterPlanV1.Wpf
             }
             if (_currentProjection?.FiAge != null)
             {
-                FIAgeValueText.Text = _currentProjection.FiAge.ToString();
+                //FIAgeValueText.Text = _currentProjection.FiAge.ToString(); //TheEngineer
+                FIAgeValueText.Text = _currentProjection == null
+                ? "-"
+                : _currentProjection.FiAge.HasValue
+                    ? _currentProjection.FiAge.Value.ToString()
+                    : (_currentProjection.IsFiReachable ? "-" : "FI IS NOT POSSIBLE");
             }
 
             if (_currentProjection?.FiAsset is decimal fiAsset)
@@ -496,7 +501,6 @@ namespace ProductMasterPlanV1.Wpf
                 SetStatus(error);
         }
 
-
         private void AnimateResultPulse(System.Windows.Controls.TextBlock target)
         {
             if (target == null)
@@ -510,17 +514,20 @@ namespace ProductMasterPlanV1.Wpf
 
             target.RenderTransformOrigin = new Point(0.5, 0.5);
 
-            var storyboard = new System.Windows.Media.Animation.Storyboard();
+            var storyboard = new System.Windows.Media.Animation.Storyboard
+            {
+                FillBehavior = System.Windows.Media.Animation.FillBehavior.Stop
+            };
 
             var scaleXAnimation = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
             scaleXAnimation.KeyFrames.Add(
                 new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
             scaleXAnimation.KeyFrames.Add(
-                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.18, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(90))));
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.16, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(70))));
             scaleXAnimation.KeyFrames.Add(
-                new System.Windows.Media.Animation.EasingDoubleKeyFrame(0.95, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(170))));
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(0.98, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(140))));
             scaleXAnimation.KeyFrames.Add(
-                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(240))));
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(200))));
             System.Windows.Media.Animation.Storyboard.SetTarget(scaleXAnimation, target);
             System.Windows.Media.Animation.Storyboard.SetTargetProperty(
                 scaleXAnimation,
@@ -530,34 +537,105 @@ namespace ProductMasterPlanV1.Wpf
             scaleYAnimation.KeyFrames.Add(
                 new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
             scaleYAnimation.KeyFrames.Add(
-                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.18, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(90))));
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.16, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(70))));
             scaleYAnimation.KeyFrames.Add(
-                new System.Windows.Media.Animation.EasingDoubleKeyFrame(0.95, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(170))));
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(0.98, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(140))));
             scaleYAnimation.KeyFrames.Add(
-                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(240))));
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(200))));
             System.Windows.Media.Animation.Storyboard.SetTarget(scaleYAnimation, target);
             System.Windows.Media.Animation.Storyboard.SetTargetProperty(
                 scaleYAnimation,
                 new PropertyPath("RenderTransform.ScaleY"));
 
-            var opacityAnimation = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
-            opacityAnimation.KeyFrames.Add(
-                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-            opacityAnimation.KeyFrames.Add(
-                new System.Windows.Media.Animation.EasingDoubleKeyFrame(0.70, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(80))));
-            opacityAnimation.KeyFrames.Add(
-                new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(240))));
-            System.Windows.Media.Animation.Storyboard.SetTarget(opacityAnimation, target);
+            var fontSizeAnimation = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
+            fontSizeAnimation.KeyFrames.Add(
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(target.FontSize, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+            fontSizeAnimation.KeyFrames.Add(
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(target.FontSize + 4, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(70))));
+            fontSizeAnimation.KeyFrames.Add(
+                new System.Windows.Media.Animation.EasingDoubleKeyFrame(target.FontSize, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(200))));
+            System.Windows.Media.Animation.Storyboard.SetTarget(fontSizeAnimation, target);
             System.Windows.Media.Animation.Storyboard.SetTargetProperty(
-                opacityAnimation,
-                new PropertyPath("Opacity"));
+                fontSizeAnimation,
+                new PropertyPath(System.Windows.Controls.TextBlock.FontSizeProperty));
 
             storyboard.Children.Add(scaleXAnimation);
             storyboard.Children.Add(scaleYAnimation);
-            storyboard.Children.Add(opacityAnimation);
+            storyboard.Children.Add(fontSizeAnimation);
+
+            storyboard.Completed += (_, __) =>
+            {
+                scaleTransform.ScaleX = 1.0;
+                scaleTransform.ScaleY = 1.0;
+                target.FontSize = Math.Round(target.FontSize);
+            };
+
             storyboard.Begin();
         }
 
+
+        /*
+                private void AnimateResultPulse(System.Windows.Controls.TextBlock target)
+                {
+                    if (target == null)
+                        return;
+
+                    if (target.RenderTransform is not System.Windows.Media.ScaleTransform scaleTransform)
+                    {
+                        scaleTransform = new System.Windows.Media.ScaleTransform(1.0, 1.0);
+                        target.RenderTransform = scaleTransform;
+                    }
+
+                    target.RenderTransformOrigin = new Point(0.5, 0.5);
+
+                    var storyboard = new System.Windows.Media.Animation.Storyboard();
+
+                    var scaleXAnimation = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
+                    scaleXAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+                    scaleXAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.18, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(90))));
+                    scaleXAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(0.95, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(170))));
+                    scaleXAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(240))));
+                    System.Windows.Media.Animation.Storyboard.SetTarget(scaleXAnimation, target);
+                    System.Windows.Media.Animation.Storyboard.SetTargetProperty(
+                        scaleXAnimation,
+                        new PropertyPath("RenderTransform.ScaleX"));
+
+                    var scaleYAnimation = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
+                    scaleYAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+                    scaleYAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.18, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(90))));
+                    scaleYAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(0.95, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(170))));
+                    scaleYAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(240))));
+                    System.Windows.Media.Animation.Storyboard.SetTarget(scaleYAnimation, target);
+                    System.Windows.Media.Animation.Storyboard.SetTargetProperty(
+                        scaleYAnimation,
+                        new PropertyPath("RenderTransform.ScaleY"));
+
+                    var opacityAnimation = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
+                    opacityAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+                    opacityAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(0.70, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(80))));
+                    opacityAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(240))));
+                    System.Windows.Media.Animation.Storyboard.SetTarget(opacityAnimation, target);
+                    System.Windows.Media.Animation.Storyboard.SetTargetProperty(
+                        opacityAnimation,
+                        new PropertyPath("Opacity"));
+
+                    storyboard.Children.Add(scaleXAnimation);
+                    storyboard.Children.Add(scaleYAnimation);
+                    storyboard.Children.Add(opacityAnimation);
+                    storyboard.Begin();
+                }
+        */
 
         private void AgeMinus6_Click(object sender, RoutedEventArgs e) => AdjustAge(-6);
         private void AgeMinus3_Click(object sender, RoutedEventArgs e) => AdjustAge(-3);
