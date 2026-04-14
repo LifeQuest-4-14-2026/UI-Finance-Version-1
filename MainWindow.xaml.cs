@@ -7,6 +7,8 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
+
 
 namespace ProductMasterPlanV1.Wpf
 {
@@ -23,12 +25,22 @@ namespace ProductMasterPlanV1.Wpf
         private decimal _startingAssets;
         private decimal _startingDebt;
         private decimal? _budget;
+        private System.Windows.Threading.DispatcherTimer _debounceTimer;
 
         private bool _isBusy;
 
         public MainWindow(IV1ApplicationService v1ApplicationService)
         {
             InitializeComponent();
+
+            _debounceTimer = new DispatcherTimer();
+            _debounceTimer.Interval = TimeSpan.FromMilliseconds(300);
+            _debounceTimer.Tick += (s, e) =>
+            {
+                _debounceTimer.Stop();
+                RunSimulationButton_Click(null, null);
+            };
+
             _v1ApplicationService = v1ApplicationService ?? throw new ArgumentNullException(nameof(v1ApplicationService));
 
             SeedDefaults();
@@ -369,6 +381,9 @@ namespace ProductMasterPlanV1.Wpf
 
             _budget = current + delta;
             RefreshAllDisplays();
+
+            _debounceTimer.Stop();
+            _debounceTimer.Start();
         }
 
         private bool TryApplyVoiceCommand(string rawText, out string error)
