@@ -18,7 +18,7 @@ namespace ProductMasterPlanV1.Wpf
 {
     public partial class MainWindow : Window
     {
-        /*LET'S CHANGE THE WORLD*/
+        string letChangeTheWorld = string.Empty;
         private readonly IV1ApplicationService _v1ApplicationService;
 
         private V1ProjectionResponse? _currentProjection;
