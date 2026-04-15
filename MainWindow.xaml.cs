@@ -51,13 +51,14 @@ namespace ProductMasterPlanV1.Wpf
             SeedDefaults();
             RefreshAllDisplays();
             SetStatus("Ready.");
-
+            //MessageBox.Show("CTOR");
             Loaded += MainWindow_Loaded; //TheEngineer
         }
 
         /*TheEngineer*/
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            //MessageBox.Show("LOADED");
             RunSimulationButton_Click(null, null);
         }
 
@@ -188,7 +189,7 @@ namespace ProductMasterPlanV1.Wpf
 
         private async Task RunSimulationAsync()
         {
-
+            //MessageBox.Show("RUNSIM");
             if (_isBusy) return;
 
             var errors = ValidateInputs();
@@ -207,6 +208,13 @@ namespace ProductMasterPlanV1.Wpf
 
                 var request = BuildRunRequest();
                 var projection = await _v1ApplicationService.RunSimulationAsync(request);
+
+                //MessageBox.Show(
+                //    $"SuggestedBudget={projection?.SuggestedBudget}\n" +
+                //    $"ActualBudget={projection?.ActualBudget}\n" +
+                //    $"FiAge={projection?.FiAge}\n" +
+                //    $"FiAsset={projection?.FiAsset}\n" +
+                //    $"MillionaireAge={projection?.MillionaireAge}");
 
                 if (projection == null)
                 {
@@ -259,6 +267,7 @@ namespace ProductMasterPlanV1.Wpf
                 _isBusy = false;
             }
 			**/
+
         }
 
         private async Task SaveAsync()
@@ -339,73 +348,46 @@ namespace ProductMasterPlanV1.Wpf
             RefreshStatsDisplay();
         }
 
+
         private void RefreshProjectionDisplay()
         {
+            //MessageBox.Show("_currentProjection is " + (_currentProjection == null ? "NULL" : "NOT NULL"));
+
             if (_currentProjection == null)
             {
-                ActualBudgetValueText.Text = _budget.HasValue ? FormatMoney(_budget.Value) : ActualBudgetValueText.Text;
+                SuggestedBudgetValueText.Text = "-";
+                ActualBudgetValueText.Text = _budget.HasValue ? FormatMoney(_budget.Value) : "-";
+                FIAgeValueText.Text = "-";
+                FIAssetValueText.Text = "-";
+                MillionaireAgeValueText.Text = "-";
                 return;
-            }
-
-            /* //TheEngineer
-            if (_currentProjection?.FiAge != null)
-            {
-                //FIAgeValueText.Text = _currentProjection.FiAge.ToString(); //TheEngineer
-                FIAgeValueText.Text = _currentProjection == null
-                ? "-"
-                : _currentProjection.FiAge.HasValue
-                    ? _currentProjection.FiAge.Value.ToString()
-                    : (_currentProjection.IsFiReachable ? "-" : "FI IS NOT POSSIBLE");
-            }
-			*/
-
-            if (_currentProjection == null)
-            {
-                FIAgeValueText.Text = "-";
-            }
-            else if (_currentProjection.FiAge.HasValue)
-            {
-                FIAgeValueText.Text = _currentProjection.FiAge.Value.ToString();
-            }
-            else if (!_currentProjection.IsFiReachable)
-            {
-                // 🎮 Candy Crush moment
-                FIAgeValueText.Text = "Congrats! You’ve unlocked: Work Forever Mode 🎉";
-
-                // subtle visual feedback (reuse your existing animation)
-                AnimateResultPulse(FIAgeValueText);
-
-                // color shift to make it pop (no XAML change needed)
-                FIAgeValueText.Foreground = new SolidColorBrush(Colors.OrangeRed);
-            }
-            else
-            {
-                FIAgeValueText.Text = "-";
             }
 
             SuggestedBudgetValueText.Text = FormatMoney(_currentProjection.SuggestedBudget);
             ActualBudgetValueText.Text = FormatMoney(_currentProjection.ActualBudget);
-            //FIAgeValueText.Text = _currentProjection.FiAge.ToString();
-            //FIAssetValueText.Text = _currentProjection.FiAsset is decimal fiAsset ? FormatMoney(fiAsset) : "-";
-            MillionaireAgeValueText.Text = _currentProjection.MillionaireAge.ToString();
+            FIAgeValueText.Text = _currentProjection.FiAge.HasValue
+                ? _currentProjection.FiAge.Value.ToString()
+                : "-";
+            FIAssetValueText.Text = _currentProjection.FiAsset.HasValue
+                ? FormatMoney(_currentProjection.FiAsset.Value)
+                : "-";
+            MillionaireAgeValueText.Text = _currentProjection.MillionaireAge.HasValue
+                ? _currentProjection.MillionaireAge.Value.ToString()
+                : "-";
 
-            AnimateResultPulse(SuggestedBudgetValueText);
-            AnimateResultPulse(ActualBudgetValueText);
+            //Results Panel Animation
             AnimateResultPulse(FIAgeValueText);
-            AnimateResultPulse(FIAssetValueText);
-            AnimateResultPulse(MillionaireAgeValueText);
-
-            SetStatus($"BudgetTooLow: {_currentProjection?.IsBudgetTooLow}"); //TheEngineer
-            System.Diagnostics.Debug.WriteLine($"BudgetTooLow: {_currentProjection?.IsBudgetTooLow}"); //TheEngineer
-            if (_currentProjection?.IsBudgetTooLow == true)
-            {
-                SetStatus("⚠️ Warning: This budget may be too low to sustain.");
-
-                // subtle Candy Crush feedback
-                AnimateResultPulse(ActualBudgetValueText);
-                ActualBudgetValueText.Foreground = new SolidColorBrush(Colors.Goldenrod);
-            }
+            /*
+            MessageBox.Show(
+                $"UI set to:\n" +
+                $"Suggested={SuggestedBudgetValueText.Text}\n" +
+                $"Actual={ActualBudgetValueText.Text}\n" +
+                $"FI Age={FIAgeValueText.Text}\n" +
+                $"FI Asset={FIAssetValueText.Text}\n" +
+                $"Millionaire={MillionaireAgeValueText.Text}");
+			*/
         }
+
 
         private void RefreshStatsDisplay()
         {
