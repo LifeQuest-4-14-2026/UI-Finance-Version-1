@@ -230,7 +230,7 @@ namespace ProductMasterPlanV1.Wpf
                 if (projection.IsBudgetTooLow)
                 {
                     //SetStatus("ROUGH LIFESTYLE...");
-                    SetStatus("ROUGH LIFESTYLE...");
+                    SetStatus("Low Budget Is Selected!");
                     //MessageBox.Show("SET TO ROUGH"); // debug
                 }
                 else
@@ -377,7 +377,7 @@ namespace ProductMasterPlanV1.Wpf
 
             if (_currentProjection.IsBudgetTooLow)
             {
-                ActualBudgetValueText.Text = "ROUGH LIFESTYLE...";
+                ActualBudgetValueText.Text = "SURVIVOR MODE: PORK TROTTERS ONLY!";
             }
             else
             {
@@ -437,8 +437,8 @@ namespace ProductMasterPlanV1.Wpf
         {
             var current = _budget ?? (_currentProjection != null ? _currentProjection.SuggestedBudget : 0m);
 
-            _budget = current + delta;
-
+            //_budget = current + delta;
+            _budget = Math.Max(0m, current + delta);
             // Immediate UI update (Budget card updates instantly)
             RefreshAllDisplays();
 
