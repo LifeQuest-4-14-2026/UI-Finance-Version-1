@@ -50,7 +50,7 @@ namespace ProductMasterPlanV1.Wpf
 
             SeedDefaults();
             RefreshAllDisplays();
-            SetStatus("Ready.");
+            //SetStatus("Ready.");
             //MessageBox.Show("CTOR");
             Loaded += MainWindow_Loaded; //TheEngineer
         }
@@ -65,6 +65,7 @@ namespace ProductMasterPlanV1.Wpf
         private async void BudgetResultsDebounceTimer_Tick(object? sender, EventArgs e)
         {
             _budgetResultsDebounceTimer.Stop();
+            await RunSimulationAsync();
 
             if (_isBusy)
                 return;
@@ -81,13 +82,13 @@ namespace ProductMasterPlanV1.Wpf
             try
             {
                 _isBusy = true;
-                SetStatus("Calculating...");
+                //SetStatus("Calculating...");
 
                 var request = BuildRunRequest();
                 _currentProjection = await _v1ApplicationService.RunSimulationAsync(request);
 
                 RefreshProjectionDisplay();
-                SetStatus("Updated.");
+                //SetStatus("Updated.");
             }
             catch (Exception ex)
             {
@@ -223,8 +224,19 @@ namespace ProductMasterPlanV1.Wpf
                 }
 
                 _currentProjection = projection;
+                //MessageBox.Show("IsBudgetTooLow: " + projection.IsBudgetTooLow);
                 RefreshProjectionDisplay();
-                SetStatus("Simulation complete.");
+                //MessageBox.Show("IsBudgetTooLow: " + projection.IsBudgetTooLow);
+                if (projection.IsBudgetTooLow)
+                {
+                    //SetStatus("ROUGH LIFESTYLE...");
+                    SetStatus("ROUGH LIFESTYLE...");
+                    //MessageBox.Show("SET TO ROUGH"); // debug
+                }
+                else
+                {
+                    //SetStatus("Simulation complete.");
+                }
             }
             catch (Exception ex)
             {
@@ -363,8 +375,18 @@ namespace ProductMasterPlanV1.Wpf
                 return;
             }
 
+            if (_currentProjection.IsBudgetTooLow)
+            {
+                ActualBudgetValueText.Text = "ROUGH LIFESTYLE...";
+            }
+            else
+            {
+                ActualBudgetValueText.Text = _currentProjection.ActualBudget.ToString("C0");
+            }
+
+
             SuggestedBudgetValueText.Text = FormatMoney(_currentProjection.SuggestedBudget);
-            ActualBudgetValueText.Text = FormatMoney(_currentProjection.ActualBudget);
+            //ActualBudgetValueText.Text = FormatMoney(_currentProjection.ActualBudget);
             FIAgeValueText.Text = _currentProjection.FiAge.HasValue
                 ? _currentProjection.FiAge.Value.ToString()
                 : "-";
