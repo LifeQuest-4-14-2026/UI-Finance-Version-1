@@ -375,24 +375,37 @@ namespace ProductMasterPlanV1.Wpf
                 return;
             }
 
+            SuggestedBudgetValueText.Text = FormatMoney(_currentProjection.SuggestedBudget);
+
             if (_currentProjection.IsBudgetTooLow)
             {
-                ActualBudgetValueText.Text = "SURVIVOR MODE: PORK TROTTERS ONLY!";
+                ActualBudgetValueText.Text = "SURVIVOR MODE: PORK TROTTERS ONLY 🐖🍖";
             }
             else
             {
                 ActualBudgetValueText.Text = _currentProjection.ActualBudget.ToString("C0");
             }
 
+            if (!_currentProjection.IsFiReachable)
+            {
+                FIAgeValueText.Text = "WORK TILL YOU DROP 💀";
+            }
+            else
+            {
+                FIAgeValueText.Text = _currentProjection.FiAge?.ToString() ?? "-";
+            }
 
-            SuggestedBudgetValueText.Text = FormatMoney(_currentProjection.SuggestedBudget);
-            //ActualBudgetValueText.Text = FormatMoney(_currentProjection.ActualBudget);
-            FIAgeValueText.Text = _currentProjection.FiAge.HasValue
-                ? _currentProjection.FiAge.Value.ToString()
-                : "-";
-            FIAssetValueText.Text = _currentProjection.FiAsset.HasValue
-                ? FormatMoney(_currentProjection.FiAsset.Value)
-                : "-";
+            if (!_currentProjection.IsFiReachable)
+            {
+                FIAssetValueText.Text = "NEVER HAPPENS 💀";
+            }
+            else
+            {
+                FIAssetValueText.Text = _currentProjection.FiAsset.HasValue
+                    ? FormatMoney(_currentProjection.FiAsset.Value)
+                    : "-";
+            }
+
             MillionaireAgeValueText.Text = _currentProjection.MillionaireAge.HasValue
                 ? _currentProjection.MillionaireAge.Value.ToString()
                 : "-";
