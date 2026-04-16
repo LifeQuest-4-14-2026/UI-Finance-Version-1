@@ -4,14 +4,15 @@ using ProductMasterPlanV1.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using static System.Net.Mime.MediaTypeNames;
 
 
 namespace ProductMasterPlanV1.Wpf
@@ -32,7 +33,7 @@ namespace ProductMasterPlanV1.Wpf
         //private System.Windows.Threading.DispatcherTimer _debounceTimer;
         private readonly DispatcherTimer _budgetResultsDebounceTimer;
         private bool _isBudgetPreviewActive;
-        private static readonly string PendingDisplayText = "•••";
+        //private static readonly string PendingDisplayText = "â€¢â€¢â€¢";
 
         private bool _isBusy;
 
@@ -379,7 +380,8 @@ namespace ProductMasterPlanV1.Wpf
 
             if (_currentProjection.IsBudgetTooLow)
             {
-                ActualBudgetValueText.Text = "SURVIVOR MODE: PORK TROTTERS ONLY 🐖🍖";
+                ActualBudgetValueText.Text = "SURVIVOR MODE: PORK TROTTERS ONLY!";
+                AnimateResultPulse(ActualBudgetValueText);
             }
             else
             {
@@ -388,7 +390,7 @@ namespace ProductMasterPlanV1.Wpf
 
             if (!_currentProjection.IsFiReachable)
             {
-                FIAgeValueText.Text = "WORK TILL YOU DROP 💀";
+                FIAgeValueText.Text = "WORK TILL YOU DROP!";
             }
             else
             {
@@ -397,7 +399,8 @@ namespace ProductMasterPlanV1.Wpf
 
             if (!_currentProjection.IsFiReachable)
             {
-                FIAssetValueText.Text = "NEVER HAPPENS 💀";
+                FIAssetValueText.Text = "NEVER HAPPENS!";
+                AnimateResultPulse(FIAgeValueText);
             }
             else
             {
@@ -411,7 +414,7 @@ namespace ProductMasterPlanV1.Wpf
                 : "-";
 
             //Results Panel Animation
-            AnimateResultPulse(FIAgeValueText);
+
             /*
             MessageBox.Show(
                 $"UI set to:\n" +
@@ -448,16 +451,34 @@ namespace ProductMasterPlanV1.Wpf
 
         private void AdjustBudget(decimal delta)
         {
-            var current = _budget ?? (_currentProjection != null ? _currentProjection.SuggestedBudget : 0m);
-
-            //_budget = current + delta;
-            _budget = Math.Max(0m, current + delta);
-            // Immediate UI update (Budget card updates instantly)
+            /*	4/16/2026
+            var current = _budget ?? (_currentProjection?.SuggestedBudget ?? 0m);
+            var next = current + delta;
+            var max = _afterTaxIncome > 0 ? _afterTaxIncome : decimal.MaxValue;
+            _budget = Math.Min(max, Math.Max(0m, next));
             RefreshAllDisplays();
 
-            // Debounce simulation (Candy Crush "last click" behavior)
             _budgetResultsDebounceTimer.Stop();
             _budgetResultsDebounceTimer.Start();
+			*/
+            try
+            {
+                var current = _budget ?? (_currentProjection?.SuggestedBudget ?? 0m);
+                var next = current + delta;
+                var max = _afterTaxIncome > 0 ? _afterTaxIncome : decimal.MaxValue;
+                _budget = Math.Min(max, Math.Max(0m, next));
+
+                RefreshAllDisplays();
+
+                _budgetResultsDebounceTimer.Stop();
+                _budgetResultsDebounceTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("ADJUST_BUDGET_EXCEPTION");
+                System.Diagnostics.Debug.WriteLine(ex.ToString());
+                throw;
+            }
         }
 
         private bool TryApplyVoiceCommand(string rawText, out string error)
