@@ -470,6 +470,7 @@ namespace ProductMasterPlanV1.Wpf
             _budgetResultsDebounceTimer.Start();
         }
 
+        /*
         private void AdjustIncomeValue(decimal delta)
         {
             var next = _afterTaxIncome + delta;
@@ -480,6 +481,27 @@ namespace ProductMasterPlanV1.Wpf
             _budgetResultsDebounceTimer.Stop();
             _budgetResultsDebounceTimer.Start();
         }
+		*/
+
+
+
+        private void AdjustIncomeValue(decimal delta)
+        {
+            if (!_budget.HasValue && _currentProjection != null)
+            {
+                _budget = _currentProjection.ActualBudget;
+            }
+
+            var next = _afterTaxIncome + delta;
+            _afterTaxIncome = Math.Max(0m, next);
+
+            RefreshAllDisplays();
+
+            _budgetResultsDebounceTimer.Stop();
+            _budgetResultsDebounceTimer.Start();
+        }
+
+
 
         private void AdjustAssetsValue(decimal delta)
         {
