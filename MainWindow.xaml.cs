@@ -31,10 +31,18 @@ namespace ProductMasterPlanV1.Wpf
         private decimal _startingDebt;
         private decimal? _budget;
         private const decimal FiHorizonAge = 100m;   //4/16/2026 for use in UI match with business private const decimal FiHorizonAge = 100m;
-        //private System.Windows.Threading.DispatcherTimer _debounceTimer;
+                                                     //private System.Windows.Threading.DispatcherTimer _debounceTimer;
+
+        private const int MinAge = 0;
+        private const int MaxAge = 100;
+
+        private const decimal MinIncome = 0m;
+        private const decimal MinAssets = 0m;
+        private const decimal MinDebt = 0m;
+
         private readonly DispatcherTimer _budgetResultsDebounceTimer;
         private bool _isBudgetPreviewActive;
-        //private static readonly string PendingDisplayText = "â€¢â€¢â€¢";
+        //private static readonly string PendingDisplayText = "•••";
 
         private bool _isBusy;
 
@@ -444,11 +452,58 @@ namespace ProductMasterPlanV1.Wpf
             StatusTextBlock.Text = message;
         }
 
-        private void AdjustAge(int delta) { _startAge += delta; RefreshAllDisplays(); }
-        private void AdjustIncome(decimal delta) { _afterTaxIncome += delta; RefreshAllDisplays(); }
+        //private void AdjustAge(int delta) { _startAge += delta; RefreshAllDisplays(); }
+        //private void AdjustIncome(decimal delta) { _afterTaxIncome += delta; RefreshAllDisplays(); }
         private void AdjustYears(int delta) { _yearsWillingToWork += delta; RefreshAllDisplays(); }
-        private void AdjustAssets(decimal delta) { _startingAssets += delta; RefreshAllDisplays(); }
-        private void AdjustDebt(decimal delta) { _startingDebt += delta; RefreshAllDisplays(); }
+        //private void AdjustAssets(decimal delta) { _startingAssets += delta; RefreshAllDisplays(); }
+        //private void AdjustDebt(decimal delta) { _startingDebt += delta; RefreshAllDisplays(); }
+
+
+        private void AdjustAgeValue(int delta)
+        {
+            var next = _startAge + delta;
+            _startAge = Math.Max(MinAge, Math.Min(MaxAge, next));
+
+            RefreshAllDisplays();
+
+            _budgetResultsDebounceTimer.Stop();
+            _budgetResultsDebounceTimer.Start();
+        }
+
+        private void AdjustIncomeValue(decimal delta)
+        {
+            var next = _afterTaxIncome + delta;
+            _afterTaxIncome = Math.Max(MinIncome, next);
+
+            RefreshAllDisplays();
+
+            _budgetResultsDebounceTimer.Stop();
+            _budgetResultsDebounceTimer.Start();
+        }
+
+        private void AdjustAssetsValue(decimal delta)
+        {
+            var next = _startingAssets + delta;
+            _startingAssets = Math.Max(MinAssets, next);
+
+            RefreshAllDisplays();
+
+            _budgetResultsDebounceTimer.Stop();
+            _budgetResultsDebounceTimer.Start();
+        }
+
+        private void AdjustDebtValue(decimal delta)
+        {
+            var next = _startingDebt + delta;
+            _startingDebt = Math.Max(MinDebt, next);
+
+            RefreshAllDisplays();
+
+            _budgetResultsDebounceTimer.Stop();
+            _budgetResultsDebounceTimer.Start();
+        }
+
+
 
         private void AdjustBudget(decimal delta)
         {
@@ -709,13 +764,22 @@ namespace ProductMasterPlanV1.Wpf
                 }
         */
 
+        /*
         private void AgeMinus6_Click(object sender, RoutedEventArgs e) => AdjustAge(-6);
         private void AgeMinus3_Click(object sender, RoutedEventArgs e) => AdjustAge(-3);
         private void AgeMinus1_Click(object sender, RoutedEventArgs e) => AdjustAge(-1);
         private void AgePlus1_Click(object sender, RoutedEventArgs e) => AdjustAge(1);
         private void AgePlus3_Click(object sender, RoutedEventArgs e) => AdjustAge(3);
         private void AgePlus6_Click(object sender, RoutedEventArgs e) => AdjustAge(6);
+		*/
+        private void AgeMinus6_Click(object sender, RoutedEventArgs e) => AdjustAgeValue(-6);
+        private void AgeMinus3_Click(object sender, RoutedEventArgs e) => AdjustAgeValue(-3);
+        private void AgeMinus1_Click(object sender, RoutedEventArgs e) => AdjustAgeValue(-1);
+        private void AgePlus1_Click(object sender, RoutedEventArgs e) => AdjustAgeValue(1);
+        private void AgePlus3_Click(object sender, RoutedEventArgs e) => AdjustAgeValue(3);
+        private void AgePlus6_Click(object sender, RoutedEventArgs e) => AdjustAgeValue(6);
 
+        /*
         private void IncomeMinus1000_Click(object sender, RoutedEventArgs e) => AdjustIncome(-1000m);
         private void IncomeMinus5000_Click(object sender, RoutedEventArgs e) => AdjustIncome(-5000m);
         private void IncomeMinus10000_Click(object sender, RoutedEventArgs e) => AdjustIncome(-10000m);
@@ -724,15 +788,8 @@ namespace ProductMasterPlanV1.Wpf
         private void IncomePlus5000_Click(object sender, RoutedEventArgs e) => AdjustIncome(5000m);
         private void IncomePlus10000_Click(object sender, RoutedEventArgs e) => AdjustIncome(10000m);
         private void IncomePlus100000_Click(object sender, RoutedEventArgs e) => AdjustIncome(100000m);
-
-        /*4/16/2026
-        private void YearsMinus6_Click(object sender, RoutedEventArgs e) => AdjustYears(-6);
-        private void YearsMinus3_Click(object sender, RoutedEventArgs e) => AdjustYears(-3);
-        private void YearsMinus1_Click(object sender, RoutedEventArgs e) => AdjustYears(-1);
-        private void YearsPlus1_Click(object sender, RoutedEventArgs e) => AdjustYears(1);
-        private void YearsPlus3_Click(object sender, RoutedEventArgs e) => AdjustYears(3);
-        private void YearsPlus6_Click(object sender, RoutedEventArgs e) => AdjustYears(6);
 		*/
+
         private void YearsMinus6_Click(object sender, RoutedEventArgs e) => AdjustYearsValue(-6);
         private void YearsMinus3_Click(object sender, RoutedEventArgs e) => AdjustYearsValue(-3);
         private void YearsMinus1_Click(object sender, RoutedEventArgs e) => AdjustYearsValue(-1);
@@ -752,6 +809,7 @@ namespace ProductMasterPlanV1.Wpf
             _budgetResultsDebounceTimer.Start();
         }
 
+        /*
         private void AssetsMinus1000_Click(object sender, RoutedEventArgs e) => AdjustAssets(-1000m);
         private void AssetsMinus5000_Click(object sender, RoutedEventArgs e) => AdjustAssets(-5000m);
         private void AssetsMinus10000_Click(object sender, RoutedEventArgs e) => AdjustAssets(-10000m);
@@ -769,6 +827,7 @@ namespace ProductMasterPlanV1.Wpf
         private void DebtPlus5000_Click(object sender, RoutedEventArgs e) => AdjustDebt(5000m);
         private void DebtPlus10000_Click(object sender, RoutedEventArgs e) => AdjustDebt(10000m);
         private void DebtPlus100000_Click(object sender, RoutedEventArgs e) => AdjustDebt(100000m);
+		*/
 
         private void BudgetMinus1000_Click(object sender, RoutedEventArgs e) => AdjustBudget(-1000m);
         private void BudgetMinus5000_Click(object sender, RoutedEventArgs e) => AdjustBudget(-5000m);
@@ -778,5 +837,32 @@ namespace ProductMasterPlanV1.Wpf
         private void BudgetPlus5000_Click(object sender, RoutedEventArgs e) => AdjustBudget(5000m);
         private void BudgetPlus10000_Click(object sender, RoutedEventArgs e) => AdjustBudget(10000m);
         private void BudgetPlus100000_Click(object sender, RoutedEventArgs e) => AdjustBudget(100000m);
+
+        private void IncomeMinus1000_Click(object sender, RoutedEventArgs e) => AdjustIncomeValue(-1000m);
+        private void IncomeMinus5000_Click(object sender, RoutedEventArgs e) => AdjustIncomeValue(-5000m);
+        private void IncomeMinus10000_Click(object sender, RoutedEventArgs e) => AdjustIncomeValue(-10000m);
+        private void IncomeMinus100000_Click(object sender, RoutedEventArgs e) => AdjustIncomeValue(-100000m);
+        private void IncomePlus1000_Click(object sender, RoutedEventArgs e) => AdjustIncomeValue(1000m);
+        private void IncomePlus5000_Click(object sender, RoutedEventArgs e) => AdjustIncomeValue(5000m);
+        private void IncomePlus10000_Click(object sender, RoutedEventArgs e) => AdjustIncomeValue(10000m);
+        private void IncomePlus100000_Click(object sender, RoutedEventArgs e) => AdjustIncomeValue(100000m);
+
+        private void AssetsMinus1000_Click(object sender, RoutedEventArgs e) => AdjustAssetsValue(-1000m);
+        private void AssetsMinus5000_Click(object sender, RoutedEventArgs e) => AdjustAssetsValue(-5000m);
+        private void AssetsMinus10000_Click(object sender, RoutedEventArgs e) => AdjustAssetsValue(-10000m);
+        private void AssetsMinus100000_Click(object sender, RoutedEventArgs e) => AdjustAssetsValue(-100000m);
+        private void AssetsPlus1000_Click(object sender, RoutedEventArgs e) => AdjustAssetsValue(1000m);
+        private void AssetsPlus5000_Click(object sender, RoutedEventArgs e) => AdjustAssetsValue(5000m);
+        private void AssetsPlus10000_Click(object sender, RoutedEventArgs e) => AdjustAssetsValue(10000m);
+        private void AssetsPlus100000_Click(object sender, RoutedEventArgs e) => AdjustAssetsValue(100000m);
+
+        private void DebtMinus1000_Click(object sender, RoutedEventArgs e) => AdjustDebtValue(-1000m);
+        private void DebtMinus5000_Click(object sender, RoutedEventArgs e) => AdjustDebtValue(-5000m);
+        private void DebtMinus10000_Click(object sender, RoutedEventArgs e) => AdjustDebtValue(-10000m);
+        private void DebtMinus100000_Click(object sender, RoutedEventArgs e) => AdjustDebtValue(-100000m);
+        private void DebtPlus1000_Click(object sender, RoutedEventArgs e) => AdjustDebtValue(1000m);
+        private void DebtPlus5000_Click(object sender, RoutedEventArgs e) => AdjustDebtValue(5000m);
+        private void DebtPlus10000_Click(object sender, RoutedEventArgs e) => AdjustDebtValue(10000m);
+        private void DebtPlus100000_Click(object sender, RoutedEventArgs e) => AdjustDebtValue(100000m);
     }
 }
