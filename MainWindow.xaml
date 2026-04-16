@@ -318,7 +318,8 @@
                         <WrapPanel>
                             <Button Content="Run Simulation"
                                     Style="{StaticResource PrimaryButtonStyle}"
-                                    Click="RunSimulationButton_Click"/>
+                                    Click="RunSimulationButton_Click"
+									IsEnabled="False" />
                             <Button Content="Save"
                                     Style="{StaticResource PrimaryButtonStyle}"
                                     Click="SaveButton_Click"/>

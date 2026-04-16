@@ -30,6 +30,7 @@ namespace ProductMasterPlanV1.Wpf
         private decimal _startingAssets;
         private decimal _startingDebt;
         private decimal? _budget;
+        private const decimal FiHorizonAge = 100m;   //4/16/2026 for use in UI match with business private const decimal FiHorizonAge = 100m;
         //private System.Windows.Threading.DispatcherTimer _debounceTimer;
         private readonly DispatcherTimer _budgetResultsDebounceTimer;
         private bool _isBudgetPreviewActive;
@@ -724,12 +725,32 @@ namespace ProductMasterPlanV1.Wpf
         private void IncomePlus10000_Click(object sender, RoutedEventArgs e) => AdjustIncome(10000m);
         private void IncomePlus100000_Click(object sender, RoutedEventArgs e) => AdjustIncome(100000m);
 
+        /*4/16/2026
         private void YearsMinus6_Click(object sender, RoutedEventArgs e) => AdjustYears(-6);
         private void YearsMinus3_Click(object sender, RoutedEventArgs e) => AdjustYears(-3);
         private void YearsMinus1_Click(object sender, RoutedEventArgs e) => AdjustYears(-1);
         private void YearsPlus1_Click(object sender, RoutedEventArgs e) => AdjustYears(1);
         private void YearsPlus3_Click(object sender, RoutedEventArgs e) => AdjustYears(3);
         private void YearsPlus6_Click(object sender, RoutedEventArgs e) => AdjustYears(6);
+		*/
+        private void YearsMinus6_Click(object sender, RoutedEventArgs e) => AdjustYearsValue(-6);
+        private void YearsMinus3_Click(object sender, RoutedEventArgs e) => AdjustYearsValue(-3);
+        private void YearsMinus1_Click(object sender, RoutedEventArgs e) => AdjustYearsValue(-1);
+        private void YearsPlus1_Click(object sender, RoutedEventArgs e) => AdjustYearsValue(1);
+        private void YearsPlus3_Click(object sender, RoutedEventArgs e) => AdjustYearsValue(3);
+        private void YearsPlus6_Click(object sender, RoutedEventArgs e) => AdjustYearsValue(6);
+
+        private void AdjustYearsValue(int delta)
+        {
+            var next = _yearsWillingToWork + delta;
+            //_yearsWillingToWork = Math.Max(0, next);
+            _yearsWillingToWork = (int)Math.Max(0m, Math.Min(FiHorizonAge, next));
+
+            RefreshAllDisplays();
+
+            _budgetResultsDebounceTimer.Stop();
+            _budgetResultsDebounceTimer.Start();
+        }
 
         private void AssetsMinus1000_Click(object sender, RoutedEventArgs e) => AdjustAssets(-1000m);
         private void AssetsMinus5000_Click(object sender, RoutedEventArgs e) => AdjustAssets(-5000m);
