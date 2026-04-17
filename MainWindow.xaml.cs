@@ -72,6 +72,7 @@ namespace ProductMasterPlanV1.Wpf
             RunSimulationButton_Click(null, null);
         }
 
+        /*
         private async void BudgetResultsDebounceTimer_Tick(object? sender, EventArgs e)
         {
             _budgetResultsDebounceTimer.Stop();
@@ -108,6 +109,12 @@ namespace ProductMasterPlanV1.Wpf
             {
                 _isBusy = false;
             }
+        }
+		*/
+        private async void BudgetResultsDebounceTimer_Tick(object? sender, EventArgs e)
+        {
+            _budgetResultsDebounceTimer.Stop();
+            await RunSimulationAsync();
         }
 
         private void SeedDefaults()
@@ -470,11 +477,16 @@ namespace ProductMasterPlanV1.Wpf
             _budgetResultsDebounceTimer.Start();
         }
 
-        /*
+        /* 4/17/2026
         private void AdjustIncomeValue(decimal delta)
         {
+            if (!_budget.HasValue && _currentProjection != null)
+            {
+                _budget = _currentProjection.ActualBudget;
+            }
+
             var next = _afterTaxIncome + delta;
-            _afterTaxIncome = Math.Max(MinIncome, next);
+            _afterTaxIncome = Math.Max(0m, next);
 
             RefreshAllDisplays();
 
@@ -482,7 +494,6 @@ namespace ProductMasterPlanV1.Wpf
             _budgetResultsDebounceTimer.Start();
         }
 		*/
-
 
 
         private void AdjustIncomeValue(decimal delta)
@@ -501,7 +512,51 @@ namespace ProductMasterPlanV1.Wpf
             _budgetResultsDebounceTimer.Start();
         }
 
+        /*
+		private async void IncomeMinus100000_Click(object sender, RoutedEventArgs e)
+		{
+			// Match current AdjustIncomeValue business logic exactly.
+			if (!_budget.HasValue && _currentProjection != null)
+			{
+				_budget = _currentProjection.ActualBudget;
+			}
 
+			var next = _afterTaxIncome - 100000m;
+			_afterTaxIncome = Math.Max(0m, next);
+
+			RefreshAllDisplays();
+
+			var request = BuildRunRequest();
+
+			MessageBox.Show(
+				$"REQUEST\n" +
+				$"Income={request.Inputs.AfterTaxIncome}\n" +
+				$"Budget={(request.Inputs.Budget.HasValue ? request.Inputs.Budget.Value.ToString() : "null")}"
+			);
+
+			var projection = await _v1ApplicationService.RunSimulationAsync(request);
+
+			MessageBox.Show(
+				projection == null
+					? "PROJECTION = null"
+					: $"PROJECTION\n" +
+					  $"IsFiReachable={projection.IsFiReachable}\n" +
+					  $"FiAge={(projection.FiAge.HasValue ? projection.FiAge.Value.ToString() : "null")}\n" +
+					  $"FiAsset={(projection.FiAsset.HasValue ? projection.FiAsset.Value.ToString() : "null")}\n" +
+					  $"MillionaireAge={(projection.MillionaireAge.HasValue ? projection.MillionaireAge.Value.ToString() : "null")}\n" +
+					  $"ActualBudget={projection.ActualBudget}\n" +
+					  $"SuggestedBudget={projection.SuggestedBudget}"
+			);
+
+			if (projection == null)
+			{
+				return;
+			}
+
+			_currentProjection = projection;
+			RefreshProjectionDisplay();
+		}		
+		*/
 
         private void AdjustAssetsValue(decimal delta)
         {
