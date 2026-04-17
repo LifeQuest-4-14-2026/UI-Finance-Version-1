@@ -297,17 +297,27 @@
                                    FontSize="11"
                                    TextWrapping="Wrap"/>
                         <DockPanel>
-                            <TextBox x:Name="VoiceCommandTextBox"
-                                     Height="30"
-                                     Margin="0,0,6,0"
-                                     Padding="8,4"
-                                     FontSize="12"
-                                     VerticalContentAlignment="Center"
-                                     BorderBrush="#FFD8C8F4"
-                                     BorderThickness="1"/>
+                            <!--4/17/2026-->
+                            <Button Content="🎤"
+									Width="40"
+									Margin="0,0,6,0"
+									Style="{StaticResource SecondaryButtonStyle}"
+									Click="VoiceButton_Click"
+									DockPanel.Dock="Right"/>
+
                             <Button Content="Apply Voice Command"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Click="ApplyVoiceButton_Click"/>
+									Style="{StaticResource SecondaryButtonStyle}"
+									Click="ApplyVoiceButton_Click"
+									DockPanel.Dock="Right"/>
+
+                            <TextBox x:Name="VoiceCommandTextBox"
+									 Height="30"
+									 Margin="0,0,6,0"
+									 Padding="8,4"
+									 FontSize="12"
+									 VerticalContentAlignment="Center"
+									 BorderBrush="#FFD8C8F4"
+									 BorderThickness="1"/>
                         </DockPanel>
                     </StackPanel>
                 </Border>

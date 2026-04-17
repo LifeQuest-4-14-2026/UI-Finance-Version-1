@@ -13,6 +13,8 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using static System.Net.Mime.MediaTypeNames;
+using Microsoft.CognitiveServices.Speech;
+using Microsoft.CognitiveServices.Speech.Audio;
 
 
 namespace ProductMasterPlanV1.Wpf
@@ -66,10 +68,16 @@ namespace ProductMasterPlanV1.Wpf
         }
 
         /*TheEngineer*/
+        //private void MainWindow_Loaded(object sender, RoutedEventArgs e) //4/17/2026
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             //MessageBox.Show("LOADED");
             RunSimulationButton_Click(null, null);
+        }
+
+        private async void VoiceButton_Click(object sender, RoutedEventArgs e)
+        {
+            await StartVoiceOnce(); //4/17/2026
         }
 
         /*
@@ -111,6 +119,38 @@ namespace ProductMasterPlanV1.Wpf
             }
         }
 		*/
+
+        //4/17/2026
+        private async Task StartVoiceOnce()
+        {
+            var config = SpeechConfig.FromSubscription("xxxxxx", "eastus");
+            config.SpeechRecognitionLanguage = "en-US";
+
+            using var recognizer = new SpeechRecognizer(config);
+
+            var result = await recognizer.RecognizeOnceAsync();
+
+            if (result.Reason == ResultReason.RecognizedSpeech)
+            {
+                var spoken = result.Text.ToLowerInvariant();
+
+                if (spoken.Contains("income up"))
+                {
+                    AdjustIncomeValue(10000m);
+                }
+                else
+                {
+                    MessageBox.Show($"You said: {result.Text}");
+                }
+            }
+            else
+            {
+                MessageBox.Show($"No speech recognized: {result.Reason}");
+            }
+        }
+
+
+
         private async void BudgetResultsDebounceTimer_Tick(object? sender, EventArgs e)
         {
             _budgetResultsDebounceTimer.Stop();
