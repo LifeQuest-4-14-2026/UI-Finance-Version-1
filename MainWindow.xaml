@@ -450,11 +450,6 @@
                     <TextBlock x:Name="FlagsValueText"
                                Text="-"
                                Style="{StaticResource SmallResultValueStyle}"/>
-
-                    <TextBlock Text="Reality" Style="{StaticResource ResultLabelStyle}" Margin="0,4,0,1"/>
-                    <TextBlock x:Name="RealityMessageValueText"
-							   Text="-"
-							   Style="{StaticResource SmallResultValueStyle}"/>
                 </StackPanel>
             </Border>
 

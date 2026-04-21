@@ -80,6 +80,46 @@ namespace ProductMasterPlanV1.Wpf
             await StartVoiceOnce(); //4/17/2026
         }
 
+        /*
+        private async void BudgetResultsDebounceTimer_Tick(object? sender, EventArgs e)
+        {
+            _budgetResultsDebounceTimer.Stop();
+            await RunSimulationAsync();
+
+            if (_isBusy)
+                return;
+
+            var errors = ValidateInputs();
+            ShowValidationErrors(errors);
+
+            if (errors.Count > 0)
+            {
+                SetStatus("Please fix validation errors.");
+                return;
+            }
+
+            try
+            {
+                _isBusy = true;
+                //SetStatus("Calculating...");
+
+                var request = BuildRunRequest();
+                _currentProjection = await _v1ApplicationService.RunSimulationAsync(request);
+
+                RefreshProjectionDisplay();
+                //SetStatus("Updated.");
+            }
+            catch (Exception ex)
+            {
+                SetStatus(ex.Message);
+            }
+            finally
+            {
+                _isBusy = false;
+            }
+        }
+		*/
+
         //4/17/2026
         private async Task StartVoiceOnce()
         {
@@ -241,17 +281,19 @@ namespace ProductMasterPlanV1.Wpf
                 }
 
                 _currentProjection = projection;
+                //MessageBox.Show("IsBudgetTooLow: " + projection.IsBudgetTooLow);
                 RefreshProjectionDisplay();
-                /*4-20-2026
-		        if (projection.IsBudgetTooLow)
+                //MessageBox.Show("IsBudgetTooLow: " + projection.IsBudgetTooLow);
+                if (projection.IsBudgetTooLow)
                 {
+                    //SetStatus("ROUGH LIFESTYLE...");
                     SetStatus("Low Budget Is Selected!");
+                    //MessageBox.Show("SET TO ROUGH"); // debug
                 }
                 else
                 {
                     //SetStatus("Simulation complete.");
                 }
-				*/
             }
             catch (Exception ex)
             {
@@ -261,6 +303,39 @@ namespace ProductMasterPlanV1.Wpf
             {
                 _isBusy = false;
             }
+
+            /**
+            if (_isBusy) return;
+
+            var errors = ValidateInputs();
+            ShowValidationErrors(errors);
+
+            if (errors.Count > 0)
+            {
+                SetStatus("Please fix validation errors.");
+                return;
+            }
+
+            try
+            {
+                _isBusy = true;
+                SetStatus("Running simulation...");
+
+                var request = BuildRunRequest();
+                _currentProjection = await _v1ApplicationService.RunSimulationAsync(request);
+
+                RefreshProjectionDisplay();
+                SetStatus("Simulation complete.");
+            }
+            catch (Exception ex)
+            {
+                SetStatus(ex.Message);
+            }
+            finally
+            {
+                _isBusy = false;
+            }
+			**/
 
         }
 
@@ -342,218 +417,71 @@ namespace ProductMasterPlanV1.Wpf
             RefreshStatsDisplay();
         }
 
-        /*4-20-2026
+
         private void RefreshProjectionDisplay()
         {
+            //MessageBox.Show("_currentProjection is " + (_currentProjection == null ? "NULL" : "NOT NULL"));
+
             if (_currentProjection == null)
             {
-                ClearProjectionDisplay();
+                SuggestedBudgetValueText.Text = "-";
+                ActualBudgetValueText.Text = _budget.HasValue ? FormatMoney(_budget.Value) : "-";
+                FIAgeValueText.Text = "-";
+                FIAssetValueText.Text = "-";
+                MillionaireAgeValueText.Text = "-";
                 return;
             }
 
-            var projection = _currentProjection;
+            SuggestedBudgetValueText.Text = FormatMoney(_currentProjection.SuggestedBudget);
 
-            SuggestedBudgetValueText.Text = FormatMoney(projection.SuggestedBudget);
-
-            RenderActualBudget(projection);
-            RenderFiAge(projection);
-            RenderFiAsset(projection);
-            RenderMillionaireAge(projection);
-            RenderStatusMessage(projection);
-        }
-		*/
-
-        private void RefreshProjectionDisplay()
-        {
-            var projection = _currentProjection;
-            if (projection == null)
+            if (_currentProjection.IsBudgetTooLow)
             {
-                ClearProjectionDisplay();
-                return;
-            }
-
-            SuggestedBudgetValueText.Text = FormatMoney(projection.SuggestedBudget);
-            RenderActualBudget(projection);
-            RenderFiAge(projection);
-            RenderFiAsset(projection);
-            RenderMillionaireAge(projection);
-            RenderStatusMessage(projection);
-        }
-        //4-20-2026
-        private void ClearProjectionDisplay()
-        {
-            SuggestedBudgetValueText.Text = "-";
-            ActualBudgetValueText.Text = _budget.HasValue ? FormatMoney(_budget.Value) : "-";
-            FIAgeValueText.Text = "-";
-            FIAssetValueText.Text = "-";
-            MillionaireAgeValueText.Text = "-";
-            RealityMessageValueText.Text = "-";
-            SetStatus(string.Empty);
-        }
-
-        private void RenderStatusMessage(V1ProjectionResponse projection)
-        {
-            SetStatus(string.IsNullOrWhiteSpace(projection.Message)
-                ? "Simulation complete."
-                : projection.Message);
-
-            SetStatus(projection.Message);
-            RealityMessageValueText.Text = projection.Message;
-            RealityMessageValueText.Foreground = projection.IsIncomeTooLow
-                ? Brushes.DarkRed
-                : Brushes.Black;
-        }
-
-        private void RenderActualBudget(V1ProjectionResponse projection)
-        {
-            if (projection.IsBudgetTooLow)
-            {
-                ActualBudgetValueText.Text = $"{FormatMoney(projection.ActualBudget)}  |  SURVIVOR MODE";
+                ActualBudgetValueText.Text = "SURVIVOR MODE: PORK TROTTERS ONLY!";
                 AnimateResultPulse(ActualBudgetValueText);
-                return;
+            }
+            else
+            {
+                ActualBudgetValueText.Text = _currentProjection.ActualBudget.ToString("C0");
             }
 
-            ActualBudgetValueText.Text = FormatMoney(projection.ActualBudget);
-        }
-
-        /*
-        private void RenderFiAge(V1ProjectionResponse projection)
-        {
-            if (!projection.IsFiReachable || !projection.FiAge.HasValue)
+            if (!_currentProjection.IsFiReachable)
             {
                 FIAgeValueText.Text = "WORK TILL YOU DROP!";
-                AnimateResultPulse(FIAgeValueText);
-                return;
+            }
+            else
+            {
+                FIAgeValueText.Text = _currentProjection.FiAge?.ToString() ?? "-";
             }
 
-            var fiAge = projection.FiAge.Value;
-
-            if (fiAge <= 67)
+            if (!_currentProjection.IsFiReachable)
             {
-                FIAgeValueText.Text = fiAge.ToString();
-            }
-            else if (fiAge <= 75)
-            {
-                FIAgeValueText.Text = $"{fiAge}  |  BAND 1";
-                AnimateResultPulse(FIAgeValueText);
-            }
-            else if (fiAge <= 79)
-            {
-                FIAgeValueText.Text = $"{fiAge}  |  BAND 2";
-                AnimateResultPulse(FIAgeValueText);
-            }
-            else if (fiAge <= 89)
-            {
-                FIAgeValueText.Text = $"{fiAge}  |  BAND 3";
+                FIAssetValueText.Text = "NEVER HAPPENS!";
                 AnimateResultPulse(FIAgeValueText);
             }
             else
             {
-                FIAgeValueText.Text = $"{fiAge}  |  BAND 4 MUTANT";
-                AnimateResultPulse(FIAgeValueText);
-            }
-        }
-		*/
-
-        private void RenderFiAge(V1ProjectionResponse projection)
-        {
-            if (!projection.IsFiReachable || !projection.FiAge.HasValue)
-            {
-                FIAgeValueText.Text = "WORK TILL YOU DROP!";
-                AnimateResultPulse(FIAgeValueText);
-                return;
+                FIAssetValueText.Text = _currentProjection.FiAsset.HasValue
+                    ? FormatMoney(_currentProjection.FiAsset.Value)
+                    : "-";
             }
 
-            var fiAgeText = projection.FiAge.Value.ToString();
-
-            switch (projection.FiRealityBand)
-            {
-                case FiRealityBand.Normal:
-                    FIAgeValueText.Text = fiAgeText;
-                    break;
-
-                case FiRealityBand.Extended:
-                    FIAgeValueText.Text = $"{fiAgeText}  |  EXTENDED";
-                    break;
-
-                case FiRealityBand.LateLife:
-                    FIAgeValueText.Text = $"{fiAgeText}  |  LATE LIFE";
-                    AnimateResultPulse(FIAgeValueText);
-                    break;
-
-                case FiRealityBand.Elderly:
-                    FIAgeValueText.Text = $"{fiAgeText}  |  ELDERLY";
-                    AnimateResultPulse(FIAgeValueText);
-                    break;
-
-                case FiRealityBand.Mutant:
-                    FIAgeValueText.Text = "🧬 MUTANT PLAN";
-                    AnimateResultPulse(FIAgeValueText);
-                    break;
-            }
-        }
-
-        private void RenderFiAsset(V1ProjectionResponse projection)
-        {
-            if (!projection.IsFiReachable)
-            {
-                FIAssetValueText.Text = "NEVER HAPPENS!";
-                AnimateResultPulse(FIAssetValueText);
-                return;
-            }
-
-            FIAssetValueText.Text = projection.FiAsset.HasValue
-                ? FormatMoney(projection.FiAsset.Value)
+            MillionaireAgeValueText.Text = _currentProjection.MillionaireAge.HasValue
+                ? _currentProjection.MillionaireAge.Value.ToString()
                 : "-";
+
+            //Results Panel Animation
+
+            /*
+            MessageBox.Show(
+                $"UI set to:\n" +
+                $"Suggested={SuggestedBudgetValueText.Text}\n" +
+                $"Actual={ActualBudgetValueText.Text}\n" +
+                $"FI Age={FIAgeValueText.Text}\n" +
+                $"FI Asset={FIAssetValueText.Text}\n" +
+                $"Millionaire={MillionaireAgeValueText.Text}");
+			*/
         }
 
-        private void RenderMillionaireAge(V1ProjectionResponse projection)
-        {
-            MillionaireAgeValueText.Text = projection.MillionaireAge.HasValue
-                ? projection.MillionaireAge.Value.ToString()
-                : "-";
-        }
-
-        //4-20-2026
-        /*
-        private void ApplyCandyCrushUI(V1ProjectionResponse projection)
-        {
-            if (projection.FiAge == null)
-            {
-                FIAgeValueText.Text = "WORK TILL YOU DROP!";
-                FIAssetValueText.Text = "NEVER HAPPENS!";
-                AnimateResultPulse(FIAgeValueText);
-                return;
-            }
-
-            var fiAge = projection.FiAge.Value;
-
-            if (fiAge <= 67)
-            {
-                // Normal
-                FIAgeValueText.Text = fiAge.ToString();
-            }
-            else if (fiAge <= 75)
-            {
-                FIAgeValueText.Text = $"{fiAge} (Extended)";
-            }
-            else if (fiAge <= 79)
-            {
-                FIAgeValueText.Text = $"{fiAge} 😬";
-                AnimateResultPulse(FIAgeValueText);
-            }
-            else if (fiAge <= 89)
-            {
-                FIAgeValueText.Text = $"{fiAge} 😵";
-                AnimateResultPulse(FIAgeValueText);
-            }
-            else
-            {
-                FIAgeValueText.Text = "🧬 MUTANT PLAN";
-                AnimateResultPulse(FIAgeValueText);
-            }
-        }
-		*/
 
         private void RefreshStatsDisplay()
         {
@@ -571,7 +499,11 @@ namespace ProductMasterPlanV1.Wpf
             StatusTextBlock.Text = message;
         }
 
+        //private void AdjustAge(int delta) { _startAge += delta; RefreshAllDisplays(); }
+        //private void AdjustIncome(decimal delta) { _afterTaxIncome += delta; RefreshAllDisplays(); }
         private void AdjustYears(int delta) { _yearsWillingToWork += delta; RefreshAllDisplays(); }
+        //private void AdjustAssets(decimal delta) { _startingAssets += delta; RefreshAllDisplays(); }
+        //private void AdjustDebt(decimal delta) { _startingDebt += delta; RefreshAllDisplays(); }
 
 
         private void AdjustAgeValue(int delta)
@@ -584,6 +516,24 @@ namespace ProductMasterPlanV1.Wpf
             _budgetResultsDebounceTimer.Stop();
             _budgetResultsDebounceTimer.Start();
         }
+
+        /* 4/17/2026
+        private void AdjustIncomeValue(decimal delta)
+        {
+            if (!_budget.HasValue && _currentProjection != null)
+            {
+                _budget = _currentProjection.ActualBudget;
+            }
+
+            var next = _afterTaxIncome + delta;
+            _afterTaxIncome = Math.Max(0m, next);
+
+            RefreshAllDisplays();
+
+            _budgetResultsDebounceTimer.Stop();
+            _budgetResultsDebounceTimer.Start();
+        }
+		*/
 
 
         private void AdjustIncomeValue(decimal delta)
@@ -602,6 +552,51 @@ namespace ProductMasterPlanV1.Wpf
             _budgetResultsDebounceTimer.Start();
         }
 
+        /*
+		private async void IncomeMinus100000_Click(object sender, RoutedEventArgs e)
+		{
+			// Match current AdjustIncomeValue business logic exactly.
+			if (!_budget.HasValue && _currentProjection != null)
+			{
+				_budget = _currentProjection.ActualBudget;
+			}
+
+			var next = _afterTaxIncome - 100000m;
+			_afterTaxIncome = Math.Max(0m, next);
+
+			RefreshAllDisplays();
+
+			var request = BuildRunRequest();
+
+			MessageBox.Show(
+				$"REQUEST\n" +
+				$"Income={request.Inputs.AfterTaxIncome}\n" +
+				$"Budget={(request.Inputs.Budget.HasValue ? request.Inputs.Budget.Value.ToString() : "null")}"
+			);
+
+			var projection = await _v1ApplicationService.RunSimulationAsync(request);
+
+			MessageBox.Show(
+				projection == null
+					? "PROJECTION = null"
+					: $"PROJECTION\n" +
+					  $"IsFiReachable={projection.IsFiReachable}\n" +
+					  $"FiAge={(projection.FiAge.HasValue ? projection.FiAge.Value.ToString() : "null")}\n" +
+					  $"FiAsset={(projection.FiAsset.HasValue ? projection.FiAsset.Value.ToString() : "null")}\n" +
+					  $"MillionaireAge={(projection.MillionaireAge.HasValue ? projection.MillionaireAge.Value.ToString() : "null")}\n" +
+					  $"ActualBudget={projection.ActualBudget}\n" +
+					  $"SuggestedBudget={projection.SuggestedBudget}"
+			);
+
+			if (projection == null)
+			{
+				return;
+			}
+
+			_currentProjection = projection;
+			RefreshProjectionDisplay();
+		}		
+		*/
 
         private void AdjustAssetsValue(decimal delta)
         {
@@ -629,6 +624,16 @@ namespace ProductMasterPlanV1.Wpf
 
         private void AdjustBudget(decimal delta)
         {
+            /*	4/16/2026
+            var current = _budget ?? (_currentProjection?.SuggestedBudget ?? 0m);
+            var next = current + delta;
+            var max = _afterTaxIncome > 0 ? _afterTaxIncome : decimal.MaxValue;
+            _budget = Math.Min(max, Math.Max(0m, next));
+            RefreshAllDisplays();
+
+            _budgetResultsDebounceTimer.Stop();
+            _budgetResultsDebounceTimer.Start();
+			*/
             try
             {
                 var current = _budget ?? (_currentProjection?.SuggestedBudget ?? 0m);
@@ -812,6 +817,78 @@ namespace ProductMasterPlanV1.Wpf
             storyboard.Begin();
         }
 
+
+        /*
+                private void AnimateResultPulse(System.Windows.Controls.TextBlock target)
+                {
+                    if (target == null)
+                        return;
+
+                    if (target.RenderTransform is not System.Windows.Media.ScaleTransform scaleTransform)
+                    {
+                        scaleTransform = new System.Windows.Media.ScaleTransform(1.0, 1.0);
+                        target.RenderTransform = scaleTransform;
+                    }
+
+                    target.RenderTransformOrigin = new Point(0.5, 0.5);
+
+                    var storyboard = new System.Windows.Media.Animation.Storyboard();
+
+                    var scaleXAnimation = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
+                    scaleXAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+                    scaleXAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.18, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(90))));
+                    scaleXAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(0.95, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(170))));
+                    scaleXAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(240))));
+                    System.Windows.Media.Animation.Storyboard.SetTarget(scaleXAnimation, target);
+                    System.Windows.Media.Animation.Storyboard.SetTargetProperty(
+                        scaleXAnimation,
+                        new PropertyPath("RenderTransform.ScaleX"));
+
+                    var scaleYAnimation = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
+                    scaleYAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+                    scaleYAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.18, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(90))));
+                    scaleYAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(0.95, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(170))));
+                    scaleYAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(240))));
+                    System.Windows.Media.Animation.Storyboard.SetTarget(scaleYAnimation, target);
+                    System.Windows.Media.Animation.Storyboard.SetTargetProperty(
+                        scaleYAnimation,
+                        new PropertyPath("RenderTransform.ScaleY"));
+
+                    var opacityAnimation = new System.Windows.Media.Animation.DoubleAnimationUsingKeyFrames();
+                    opacityAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+                    opacityAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(0.70, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(80))));
+                    opacityAnimation.KeyFrames.Add(
+                        new System.Windows.Media.Animation.EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(240))));
+                    System.Windows.Media.Animation.Storyboard.SetTarget(opacityAnimation, target);
+                    System.Windows.Media.Animation.Storyboard.SetTargetProperty(
+                        opacityAnimation,
+                        new PropertyPath("Opacity"));
+
+                    storyboard.Children.Add(scaleXAnimation);
+                    storyboard.Children.Add(scaleYAnimation);
+                    storyboard.Children.Add(opacityAnimation);
+                    storyboard.Begin();
+                }
+        */
+
+        /*
+        private void AgeMinus6_Click(object sender, RoutedEventArgs e) => AdjustAge(-6);
+        private void AgeMinus3_Click(object sender, RoutedEventArgs e) => AdjustAge(-3);
+        private void AgeMinus1_Click(object sender, RoutedEventArgs e) => AdjustAge(-1);
+        private void AgePlus1_Click(object sender, RoutedEventArgs e) => AdjustAge(1);
+        private void AgePlus3_Click(object sender, RoutedEventArgs e) => AdjustAge(3);
+        private void AgePlus6_Click(object sender, RoutedEventArgs e) => AdjustAge(6);
+		*/
         private void AgeMinus6_Click(object sender, RoutedEventArgs e) => AdjustAgeValue(-6);
         private void AgeMinus3_Click(object sender, RoutedEventArgs e) => AdjustAgeValue(-3);
         private void AgeMinus1_Click(object sender, RoutedEventArgs e) => AdjustAgeValue(-1);
@@ -819,6 +896,16 @@ namespace ProductMasterPlanV1.Wpf
         private void AgePlus3_Click(object sender, RoutedEventArgs e) => AdjustAgeValue(3);
         private void AgePlus6_Click(object sender, RoutedEventArgs e) => AdjustAgeValue(6);
 
+        /*
+        private void IncomeMinus1000_Click(object sender, RoutedEventArgs e) => AdjustIncome(-1000m);
+        private void IncomeMinus5000_Click(object sender, RoutedEventArgs e) => AdjustIncome(-5000m);
+        private void IncomeMinus10000_Click(object sender, RoutedEventArgs e) => AdjustIncome(-10000m);
+        private void IncomeMinus100000_Click(object sender, RoutedEventArgs e) => AdjustIncome(-100000m);
+        private void IncomePlus1000_Click(object sender, RoutedEventArgs e) => AdjustIncome(1000m);
+        private void IncomePlus5000_Click(object sender, RoutedEventArgs e) => AdjustIncome(5000m);
+        private void IncomePlus10000_Click(object sender, RoutedEventArgs e) => AdjustIncome(10000m);
+        private void IncomePlus100000_Click(object sender, RoutedEventArgs e) => AdjustIncome(100000m);
+		*/
 
         private void YearsMinus6_Click(object sender, RoutedEventArgs e) => AdjustYearsValue(-6);
         private void YearsMinus3_Click(object sender, RoutedEventArgs e) => AdjustYearsValue(-3);
@@ -838,6 +925,26 @@ namespace ProductMasterPlanV1.Wpf
             _budgetResultsDebounceTimer.Stop();
             _budgetResultsDebounceTimer.Start();
         }
+
+        /*
+        private void AssetsMinus1000_Click(object sender, RoutedEventArgs e) => AdjustAssets(-1000m);
+        private void AssetsMinus5000_Click(object sender, RoutedEventArgs e) => AdjustAssets(-5000m);
+        private void AssetsMinus10000_Click(object sender, RoutedEventArgs e) => AdjustAssets(-10000m);
+        private void AssetsMinus100000_Click(object sender, RoutedEventArgs e) => AdjustAssets(-100000m);
+        private void AssetsPlus1000_Click(object sender, RoutedEventArgs e) => AdjustAssets(1000m);
+        private void AssetsPlus5000_Click(object sender, RoutedEventArgs e) => AdjustAssets(5000m);
+        private void AssetsPlus10000_Click(object sender, RoutedEventArgs e) => AdjustAssets(10000m);
+        private void AssetsPlus100000_Click(object sender, RoutedEventArgs e) => AdjustAssets(100000m);
+
+        private void DebtMinus1000_Click(object sender, RoutedEventArgs e) => AdjustDebt(-1000m);
+        private void DebtMinus5000_Click(object sender, RoutedEventArgs e) => AdjustDebt(-5000m);
+        private void DebtMinus10000_Click(object sender, RoutedEventArgs e) => AdjustDebt(-10000m);
+        private void DebtMinus100000_Click(object sender, RoutedEventArgs e) => AdjustDebt(-100000m);
+        private void DebtPlus1000_Click(object sender, RoutedEventArgs e) => AdjustDebt(1000m);
+        private void DebtPlus5000_Click(object sender, RoutedEventArgs e) => AdjustDebt(5000m);
+        private void DebtPlus10000_Click(object sender, RoutedEventArgs e) => AdjustDebt(10000m);
+        private void DebtPlus100000_Click(object sender, RoutedEventArgs e) => AdjustDebt(100000m);
+		*/
 
         private void BudgetMinus1000_Click(object sender, RoutedEventArgs e) => AdjustBudget(-1000m);
         private void BudgetMinus5000_Click(object sender, RoutedEventArgs e) => AdjustBudget(-5000m);
